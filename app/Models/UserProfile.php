@@ -14,4 +14,12 @@ class UserProfile extends Model
     public function user(){
         return $this->belongsTo(User::class);
     }
+
+    protected $fillable = [
+        "phone_number",
+        "permanent_address",
+        "state_of_origin",
+        "profile_image",
+        "user_id"
+    ];
 }

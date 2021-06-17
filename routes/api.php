@@ -30,4 +30,7 @@ Route::middleware('auth:api')->group(function(){
    Route::get("location", [LocationController::class, "location"]); //route for displaying current location of client
    Route::post("create-profile", [userProfileController::class, "store"]);
    Route::get("user-profile", [userProfileController::class, "show"]);
+   Route::get("users", [userProfileController::class, "showAllUsers"]);
+   Route::get("user-delete", [userProfileController::class, "destroy"]);
+   Route::post("profile-update", [userProfileController::class, "update"]);
 });

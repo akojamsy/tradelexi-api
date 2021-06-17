@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; 
 use App\Models\User;
 use App\Models\UserProfile;
+use Validator;
+
 
 class userProfileController extends Controller
 {
@@ -34,20 +36,19 @@ class userProfileController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
-     */
+    */
+
     public function store(Request $request)
     {   
         $validator = Validator::make($request->all(), [ 
             'phone_number' => 'required', 
-            'permanent_address' => 'required',
-            
+            'permanent_address' => 'required',            
         ]);
         if ($validator->fails()) { 
-            return response()->json(['error'=>$validator->errors()], 401);            
+            return response()->json(['error'=>$validator->errors()], 401);           
         }
 
         $profile = new UserProfile;
-        $user = new User;
         $user = Auth::user();
 
         $profile->phone_number = $request->phone_number;
@@ -70,7 +71,7 @@ class userProfileController extends Controller
      */
     public $successStatus = 200; 
 
-    public function show()
+    public function showAllUsers()
     {   
         $user = Auth::user();
        
@@ -78,6 +79,22 @@ class userProfileController extends Controller
                                     // ->select("user.email", "userprofile.address")
                                     ->get();        
         return response()->json(['user'=> $profileData], $this->successStatus);
+    }
+
+
+    public function show(){
+
+        $user = Auth::user();
+       
+        try {
+            $profileData = User::where('user_id', "=", $user->id)->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+                                    // ->select("user.email", "userprofile.address")
+                                    ->firstOrFail();
+            return response()->json(['user'=> $profileData], $this->successStatus);
+
+        } catch (\Throwable $th) {
+            return "Error! Could not get the profile of the user";
+        }
     }
 
     /**
@@ -94,9 +111,26 @@ class userProfileController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        
+       
+        $user = Auth::user();
+
+        $profile = UserProfile::where('user_id','=', $user->id)->update([
+            
+            "permanent_address" => $request->input("permanent_address"),
+            "profile_image" => $request->input("profile_image"),
+            "state_of_origin" => $request->input("state_of_origin"),
+            "phone_number" => $request->input("phone_number"),
+        ]);
+
+        if($profile){
+            return response()
+            ->json(["message" => " Profile data updated successfully.", 
+                    "status" => "200",
+                    "updated_profile" => $profile
+                    ]);
+        }
     }
 
     /**
@@ -105,8 +139,19 @@ class userProfileController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    
+    public function destroy()
     {   
+        $user = Auth::user();
 
+        $profileData = User::find($user->id)->userprofile;
+        if(!$profileData->delete()){
+            $message = "Unkown Error! Unable to delete this user data.";
+            $status = 501;
+        }else{
+            $message = "User profile deleted successfully.";
+            $status = 200;
+        }
+        return response()->json(["message"=> $message], $status);
     }
 }
